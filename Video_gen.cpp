@@ -37,13 +37,13 @@ void clamp(int * x, int * y) {
 		*x = 0; 
 		
 		else if (*x >= W)
-			(*x = W - 1);
+			*x = W - 1;
 			
 	if (*y < 0)
 		*y = 0;
 		
 		else if (*y >= H)
-			(*y = H - 1);
+			*y = H - 1;
 }
 
 bool outside_frame(int * x, int * y) {
