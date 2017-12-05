@@ -15,9 +15,9 @@ const int duration_in_seconds = 3;
 
 typedef unsigned char byte;
 
-class Video{
+class Rectangle{
 	public:
-		Video(){}
+		Rectangle(){}
 		void clamp(int * x, int * y);
 		void blank_frame() { memset(frame, 0, sizeof(frame)); }
 		void draw_rect(int x, int y, int w, int h, byte r, byte g, byte b);
@@ -29,7 +29,7 @@ using namespace std;
 
 // Main drawing code.
 // Expand this function to add content to the video.
-void Video::draw_frame(double t) {
+void Rectangle::draw_frame(double t) {
 	blank_frame();
 	const double pps = 80; // pixels per second
 	draw_rect(0 + t * pps, 0 + t * pps, 20, 10, 0x00, 0xff, 0x00);
@@ -40,19 +40,21 @@ void Video::draw_frame(double t) {
 }
 
 // Constrain point to frame.
-void Video::clamp(int * x, int * y) {
+void Rectangle::clamp(int * x, int * y) {
 	if (*x < 0) *x = 0; else if (*x >= W) *x = W - 1;
 	if (*y < 0) *y = 0; else if (*y >= H) *y = H - 1;
 }
 
-bool Video::outside_frame(int * x, int * y) {
+bool Rectangle::outside_frame(int * x, int * y) {
 	return *x < 0 or *x >= W or *y < 0 or *y >= H;
 }
 
 // Draw a solid rectangle at given location, with given width and height
 // and with given RGB color value.
-void Video::draw_rect(int x, int y, int w, int h, byte r, byte g, byte b) {
-	if (outside_frame(&x, &y)) return;
+void Rectangle::draw_rect(int x, int y, int w, int h, byte r, byte g, byte b) {
+	if (outside_frame(&x, &y)) {
+		return;
+ 	}
 	int x0 = x;
 	int x1 = x + w;
 	int y0 = y;
@@ -61,9 +63,11 @@ void Video::draw_rect(int x, int y, int w, int h, byte r, byte g, byte b) {
 	clamp(&x1, &y1);
 	for (int y = y0; y < y1; ++y) {
 		for (int x = x0; x < x1; ++x) {
-			frame[y][x][0] = r;
-			frame[y][x][1] = g;
-			frame[y][x][2] = b;
+			if (!outside_frame(&x, &y)){
+				frame[y][x][0] = r;
+				frame[y][x][1] = g;
+				frame[y][x][2] = b;
+			}
 		}
 	}
 }
@@ -71,7 +75,7 @@ void Video::draw_rect(int x, int y, int w, int h, byte r, byte g, byte b) {
 
 int main(int argc, char * argv[]) {
 	// Construct the ffmpeg command to run.
-	Video v;
+	Rectangle r;
 	const char * cmd = 
 		"ffmpeg              "
 		"-y                  "
@@ -98,7 +102,7 @@ int main(int argc, char * argv[]) {
 	int num_frames = duration_in_seconds * frames_per_second;
 	for (int i = 0; i < num_frames; ++i) {
 		double time_in_seconds = i / frames_per_second;
-		v.draw_frame(time_in_seconds);
+		r.draw_frame(time_in_seconds);
 		fwrite(frame, 3, W * H, pipe);
 	}
 
